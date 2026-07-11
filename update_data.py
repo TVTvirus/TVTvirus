@@ -75,15 +75,20 @@ def github_stats():
     _, u = gh(f"https://api.github.com/users/{USER}")
 
     commits = adds = dels = 0
+    skipped = 0
     for r in repos:
         # /stats/contributors responde 202 mientras calcula: reintentar
-        for _ in range(6):
+        for _ in range(8):
             code, stats = gh(f"https://api.github.com/repos/{r['full_name']}/stats/contributors")
             if code == 200 and isinstance(stats, list):
                 break
-            time.sleep(3)
+            if code == 204:          # repo vacio: dato valido, no hay commits
+                stats = []
+                break
+            time.sleep(4)
         else:
-            print(f"stats: {r['full_name']} no respondio, lo salto")
+            print(f"stats: {r['full_name']} no respondio")
+            skipped += 1
             continue
         for c in stats:
             if c.get("author") and c["author"]["login"].lower() == USER.lower():
@@ -96,7 +101,7 @@ def github_stats():
         "followers": str(u.get("followers", "?")),
         "commits": f"{commits:,}",
         "loc": f"{adds - dels:,} ({adds:,}++, {dels:,}--)",
-    }
+    }, skipped
 
 
 if __name__ == "__main__":
@@ -108,7 +113,12 @@ if __name__ == "__main__":
     song = spotify_last_played()
     if song:
         data["last_played"] = song
-    data.update(github_stats())
+    stats, skipped = github_stats()
+    if skipped and all(k in data for k in stats):
+        # cifras incompletas: mejor conservar las anteriores que publicar menos
+        print(f"stats: {skipped} repos sin responder, conservo stats anteriores")
+    else:
+        data.update(stats)
     with open("data.json", "w") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     print("data.json:", json.dumps(data, ensure_ascii=False))
