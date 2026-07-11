@@ -100,7 +100,9 @@ def github_stats():
         "stars": str(sum(r["stargazers_count"] for r in owned)),
         "followers": str(u.get("followers", "?")),
         "commits": f"{commits:,}",
-        "loc": f"{adds - dels:,} ({adds:,}++, {dels:,}--)",
+        "loc_net": f"{adds - dels:,}",
+        "loc_add": f"{adds:,}",
+        "loc_del": f"{dels:,}",
     }, skipped
 
 

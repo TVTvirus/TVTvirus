@@ -29,9 +29,9 @@ ROWS = [
     ("field", "Contact.Discord", "TVTvirus"),
     ("field", "Contact.Email",   "tvtvirus2.0@gmail.com"),
     ("blank",),
-    ("field", "Stats.Repos",   "{repos}  ·  {stars} stars  ·  {followers} followers"),
+    ("field", "Stats.Repos",   "{repos}  ·  [y]{stars} stars[/]  ·  {followers} followers"),
     ("field", "Stats.Commits", "{commits}"),
-    ("field", "Stats.Lines of Code", "{loc}"),
+    ("field", "Stats.Lines of Code", "{loc_net} ([g]{loc_add}++[/], [r]{loc_del}--[/])"),
 ]
 
 # Paletas: se genera un SVG por tema (GitHub elige con prefers-color-scheme)
@@ -44,6 +44,9 @@ THEMES = {
         C_KEY="#58a6ff",    # las claves (OS:, IDE:, ...)
         C_VAL="#c9d1d9",    # los valores
         C_CURSOR="#7ee787",
+        C_ADD="#3fb950",    # [g] verde (lineas anadidas)
+        C_DEL="#f85149",    # [r] rojo (lineas borradas)
+        C_STAR="#e3b341",   # [y] dorado (stars)
     ),
     "light_mode.svg": dict(
         BG="#ffffff", BORDER="#d0d7de",
@@ -53,6 +56,9 @@ THEMES = {
         C_KEY="#0969da",
         C_VAL="#1f2328",
         C_CURSOR="#1a7f37",
+        C_ADD="#1a7f37",
+        C_DEL="#cf222e",
+        C_STAR="#9a6700",
     ),
 }
 # ===================================================================
@@ -65,6 +71,7 @@ PAD = 24
 
 
 import json
+import re
 
 class _Safe(dict):
     def __missing__(self, k):
@@ -141,9 +148,17 @@ def build():
             y += LH_TXT * 0.5; line_idx += 1; continue
         _, key, val = row
         val = val.format_map(DATA)
+        # markup inline [g]...[/] verde, [r]...[/] rojo, [y]...[/] dorado
+        inline = {"g": C_ADD, "r": C_DEL, "y": C_STAR}
+        val_spans = []
+        for m in re.finditer(r'\[([gry])\](.*?)\[/\]|([^\[]+|\[)', val):
+            tag, txt, plain = m.groups()
+            if tag:
+                val_spans.append(f'<tspan fill="{inline[tag]}">{esc(txt)}</tspan>')
+            else:
+                val_spans.append(f'<tspan fill="{C_VAL}">{esc(plain)}</tspan>')
         inner = (f'<tspan fill="{C_KEY}" font-weight="bold">{esc(key)}</tspan>'
-                 f'<tspan fill="{C_AT}">: </tspan>'
-                 f'<tspan fill="{C_VAL}">{esc(val)}</tspan>')
+                 f'<tspan fill="{C_AT}">: </tspan>' + "".join(val_spans))
         out.append(row_text(inner, d)); y += LH_TXT; line_idx += 1
 
     # cursor: aparece al final y parpadea (visible fijo en visores sin CSS)
