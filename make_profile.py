@@ -11,6 +11,7 @@ HANDLE = "github"
 
 # Cada fila: ("field", clave, valor)  |  ("blank",)
 # Quita/añade filas a gusto. NO hay campo de edad a propósito.
+# Los {placeholders} se rellenan desde data.json (lo actualiza update_data.py).
 ROWS = [
     ("field", "OS",      "Fedora Linux 44 (KDE)  ·  Windows 10"),
     ("field", "Host",    "Self-hosted homelab"),
@@ -23,10 +24,14 @@ ROWS = [
     ("field", "Hobbies.Software", "Minecraft modding (Fabric), Discord bots"),
     ("field", "Hobbies.Music",    "double bass · guitar · piano · songwriting"),
     ("blank",),
-    ("field", "Now Playing", "Quién va a cantar - Rubén Rada"),
+    ("field", "Last Played", "{last_played}"),
     ("blank",),
     ("field", "Contact.Discord", "TVTvirus"),
     ("field", "Contact.Email",   "tvtvirus2.0@gmail.com"),
+    ("blank",),
+    ("field", "Stats.Repos",   "{repos}  ·  {stars} stars  ·  {followers} followers"),
+    ("field", "Stats.Commits", "{commits}"),
+    ("field", "Stats.Lines of Code", "{loc}"),
 ]
 
 # Paletas: se genera un SVG por tema (GitHub elige con prefers-color-scheme)
@@ -57,6 +62,19 @@ LH_ART = FS_ART * 1.2          # braille conserva el aspecto con lh = 2*avance (
 CH_ART = FS_ART * 0.602        # avance monoespaciado tipico
 FS_TXT, LH_TXT = 13.5, 22.0
 PAD = 24
+
+
+import json
+
+class _Safe(dict):
+    def __missing__(self, k):
+        return "?"
+
+try:
+    with open("data.json") as _f:
+        DATA = _Safe(json.load(_f))
+except FileNotFoundError:
+    DATA = _Safe()
 
 
 def esc(s):
@@ -122,6 +140,7 @@ def build():
         if row[0] == "blank":
             y += LH_TXT * 0.5; line_idx += 1; continue
         _, key, val = row
+        val = val.format_map(DATA)
         inner = (f'<tspan fill="{C_KEY}" font-weight="bold">{esc(key)}</tspan>'
                  f'<tspan fill="{C_AT}">: </tspan>'
                  f'<tspan fill="{C_VAL}">{esc(val)}</tspan>')
