@@ -29,15 +29,27 @@ ROWS = [
     ("field", "Contact.Email",   "tvtvirus2.0@gmail.com"),
 ]
 
-# Colores (paleta GitHub dark)
-BG      = "#0d1117"
-BORDER  = "#30363d"
-C_ART   = "#b9c0cc"   # la cara
-C_NAME  = "#7ee787"   # tu nombre
-C_AT    = "#8b949e"   # @github y la regla
-C_KEY   = "#58a6ff"   # las claves (OS:, IDE:, ...)
-C_VAL   = "#c9d1d9"   # los valores
-C_CURSOR= "#7ee787"
+# Paletas: se genera un SVG por tema (GitHub elige con prefers-color-scheme)
+THEMES = {
+    "dark_mode.svg": dict(
+        BG="#0d1117", BORDER="#30363d",
+        C_ART="#b9c0cc",    # la cara
+        C_NAME="#7ee787",   # tu nombre
+        C_AT="#8b949e",     # @github y la regla
+        C_KEY="#58a6ff",    # las claves (OS:, IDE:, ...)
+        C_VAL="#c9d1d9",    # los valores
+        C_CURSOR="#7ee787",
+    ),
+    "light_mode.svg": dict(
+        BG="#ffffff", BORDER="#d0d7de",
+        C_ART="#3f4750",
+        C_NAME="#1a7f37",
+        C_AT="#59636e",
+        C_KEY="#0969da",
+        C_VAL="#1f2328",
+        C_CURSOR="#1a7f37",
+    ),
+}
 # ===================================================================
 
 FS_ART = 12.5
@@ -126,7 +138,9 @@ def build():
 
 
 if __name__ == "__main__":
-    svg = build()
-    with open("dark_mode.svg", "w") as f:
-        f.write(svg)
-    print(f"Escrito dark_mode.svg ({len(svg)} bytes)")
+    for fname, theme in THEMES.items():
+        globals().update(theme)      # build() lee los colores como globales
+        svg = build()
+        with open(fname, "w") as f:
+            f.write(svg)
+        print(f"Escrito {fname} ({len(svg)} bytes)")
